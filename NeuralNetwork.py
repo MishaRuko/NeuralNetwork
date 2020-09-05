@@ -74,11 +74,50 @@ def trainNetwork(h, weights, biases, trainingExamples, function="c"):
         c - cross-entropy
     '''
 
-    # 2D array, contains ouputs for every training example
-    predictions = [h(w, b, trainingExamples[i][0])[0][-1] for i in range(len(trainingExamples))]
+    # weighted sums and activations for every training example and every layer
+    # did this because getDeltas needs weightedSums for each training example and for each layer
+    # finding dC/dW[l][j][k] also requires every activation for every training example
+    allWeightedSums = []
+    allActivations = []
+    for i in range(len(trainingExamples)):
+        activations, weightedSums = h(weights, biases, trainingExamples[i][0])
+        
+        allActivations.append(activations)
+        allWeightedSums.append(weightedSums)
 
-    # TODO make list of activations and weighted sums for all training examples
 
+    # Uncomment if everything goes wrong with the cost function that doesn't use special predictions array
+
+    # def crossEntropyCost():
+    #     '''
+    #     Needs predictions for every training example in array called predictions
+    #     Put this at the beginning of the trainNetwork function
+    #     predictions = [h(w, b, trainingExamples[i][0])[0][-1] for i in range(len(trainingExamples))]
+    #     '''
+    #     result = 0
+    #     for i in range(len(trainingExamples)):
+    #         for j in range(len(predictions[0])):
+    #             result += trainingExamples[i][1][j]*np.log(predictions[i][j])+(1-trainingExamples[i][1][j])*np.log(1-predictions[i][j])
+    
+    #     result = result*(-1/len(trainingExamples))
+    #     return result
+
+
+    # Alternate function that doesn't use special predictions array
+    # I think it works
+    def crossEntropyCost():
+        result = 0
+        # for every training example
+        for i in range(len(trainingExamples)):
+            # for the number of outputs neurons there are
+            for j in range(len(allActivations[0][-1])):
+                result += trainingExamples[i][1][j]*np.log(allActivations[i][-1][j])+(1-trainingExamples[i][1][j])*np.log(1-allActivations[i][-1][j])
+    
+        result = result*(-1/len(trainingExamples))
+        return result
+
+    
+    # FIXME get rid of the useless params
     def getDeltas(weights, biases, weightedSums, networkOutput, desiredOutput):
         '''
         weightedSums: 2D array that holds the z values (weighted sums) for each neuron from every layer.
@@ -87,8 +126,10 @@ def trainNetwork(h, weights, biases, trainingExamples, function="c"):
 
         This is all for one set of input values.
         '''
+        # first entry in array are the deltas for layer 2
         deltas = []
 
+        # if function is c for cross-entropy cost function
         if function.lower == "c":
             # Derivative of the cost function
             # there is a negative sign at the beginning because of the constant -1/m but here we take m to be 1 so it's just -1
@@ -98,28 +139,30 @@ def trainNetwork(h, weights, biases, trainingExamples, function="c"):
             dSig = lambda x: (np.e**x)/((1+np.e**x)**2)
 
             # First get deltas for the output layer
-            for i in range(len(networkOutput)):
-                deltas.append(dJ(desiredOutput[i], networkOutput[i])*dSig(weightedSums[-1][i]))
+            deltas.append([dJ(desiredOutput[i], networkOutput[i])*dSig(weightedSums[-1][i]) for i in range(len(networkOutput))])
 
             # Get deltas for rest of network
+            # For every layer except the first (can't get deltas for that one) and last one (already got those)
             for layer in range(len(weights)-2, 0, -1):
+                deltas.insert(0, [])
+                # for the number of neurons in layer "layer"
                 for neuron in range(len(weights[layer])):
-                    nueronWeights = [ weights[layer][h][neuron] for h in range()]
+                    neuronWeights = [ weights[layer][nextNeuron][neuron] for nextNeuron in range(len(weights[layer+1]))]
+                    
+                    # np.dot(neuronWeights, deltas[0])
+                    
+                    # np.dot(neuronWeights, deltas[0]) * dSig(weightedSums[layer][neuron])
+                    
+                    neuronDelta = np.dot(neuronWeights, deltas[1]) * dSig(weightedSums[layer][neuron])
+                    deltas[0].append(neuronDelta)
 
-                    # remeber to use .insert(0, values)
+        return deltas
 
-    def crossEntropyCost():
-        '''
-        Needs predictions for every training example in array called predictions
-        predictions = [h(w, b, trainingExamples[i][0])[0][-1] for i in range(len(trainingExamples))]
-        '''
-        result = 0
-        for i in range(len(trainingExamples)):
-            for j in range(len(predictions[0])):
-                result += trainingExamples[i][1][j]*np.log(predictions[i][j])+(1-trainingExamples[i][1][j])*np.log(1-predictions[i][j])
-    
-        result = result*(-1/len(trainingExamples))
-        return result
+    # TODO implement gradient descent
+
+    def gradientDescent():
+        pass
+
 
     # TODO change this to something else after done with testing
     return crossEntropyCost()
