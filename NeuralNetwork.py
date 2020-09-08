@@ -126,11 +126,11 @@ def trainNetwork(h, weights, biases, trainingExamples, function="c"):
 
         This is all for one set of input values.
         '''
+
         # first entry in array are the deltas for layer 2
         deltas = []
-
         # if function is c for cross-entropy cost function
-        if function.lower == "c":
+        if func.lower() == "c":
             # Derivative of the cost function
             # there is a negative sign at the beginning because of the constant -1/m but here we take m to be 1 so it's just -1
             dJ = lambda y, output: -(y-output)/(output-(output**2))
@@ -143,17 +143,17 @@ def trainNetwork(h, weights, biases, trainingExamples, function="c"):
 
             # Get deltas for rest of network
             # For every layer except the first (can't get deltas for that one) and last one (already got those)
-            for layer in range(len(weights)-2, 0, -1):
+            for weightSet in range(len(weights)-1, 0, -1):
                 deltas.insert(0, [])
-                # for the number of neurons in layer "layer"
-                for neuron in range(len(weights[layer])):
-                    neuronWeights = [ weights[layer][nextNeuron][neuron] for nextNeuron in range(len(weights[layer+1]))]
+                # for the number of neurons in layer "weightSet"
+                for neuron in range(len(weights[weightSet])):
+                    neuronWeights = [ weights[weightSet][nextNeuron][neuron] for nextNeuron in range(len(weights[weightSet]))]
                     
                     # np.dot(neuronWeights, deltas[0])
                     
                     # np.dot(neuronWeights, deltas[0]) * dSig(weightedSums[layer][neuron])
                     
-                    neuronDelta = np.dot(neuronWeights, deltas[1]) * dSig(weightedSums[layer][neuron])
+                    neuronDelta = np.dot(neuronWeights, deltas[1]) * dSig(weightedSums[weightSet][neuron])
                     deltas[0].append(neuronDelta)
 
         return deltas
