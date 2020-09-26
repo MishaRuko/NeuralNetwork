@@ -124,7 +124,7 @@ def trainNetwork(h, weights, biases, trainingExamples, alpha, func="c", iters=10
             for weightSet in range(len(weights)-1, 0, -1):
                 deltas.insert(0, [])
                 # for the number of neurons in layer "weightSet"
-                for neuron in range(len(weights[weightSet])):
+                for neuron in range(len(weights[weightSet][0])):
                     neuronWeights = [ weights[weightSet][nextNeuron][neuron] for nextNeuron in range(len(weights[weightSet]))]
                     
                     neuronDelta = np.dot(neuronWeights, deltas[1]) * dSig(weightedSums[weightSet][neuron])
