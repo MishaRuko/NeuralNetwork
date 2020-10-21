@@ -67,6 +67,16 @@ def forwardProp(weights, biases, networkInputs, layerActivationFuncs):
             len(layerActivationFuncs), len(weights)))
 
     # Activation functions
+    
+    # Prevents output of network from being 1 because it messes with crossEntropyCost and dCrossEntropy
+    # dSig is capped at 22 so it's 22 here as well for consistency
+    # def sigmoid(x):
+    #     if x > 22:
+    #         return 0.999999
+    #     elif x < -22:
+    #         return 1e-10
+    #     return 1 / (1 + (np.e ** (-x)))
+    
     def sigmoid(x):
         return 1 / (1 + (np.e ** (-x)))
 
@@ -152,6 +162,7 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
 
         deltas = []
 
+        # Overflow prevention
         # def dCrossEntropy(y, yHat):
         #     maxVal = 100000
         #     if y == yHat:
@@ -166,6 +177,13 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
         def dCrossEntropy(y, yHat):
             return -(y - yHat) / (yHat - (yHat ** 2))
 
+        # Alternative that prevents overflow
+        # Exponent function overflows when x is approx. 23
+        # def dSig(x):
+        #     if abs(x) > 22:
+        #       return 1e-10
+        #   return (np.e ** x) / ((np.e ** x) + 1) ** 2
+        
         def dSig(x):
             return (np.e ** x) / ((np.e ** x) + 1) ** 2
 
