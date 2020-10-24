@@ -67,21 +67,16 @@ def forwardProp(weights, biases, networkInputs, layerActivationFuncs):
             len(layerActivationFuncs), len(weights)))
 
     # Activation functions
-    
-    # Prevents output of network from being 1 because it messes with crossEntropyCost and dCrossEntropy
-    # dSig is capped at 22 so it's 22 here as well for consistency
-    # def sigmoid(x):
-    #     if x > 22:
-    #         return 0.999999
-    #     elif x < -22:
-    #         return 1e-10
-    #     return 1 / (1 + (np.e ** (-x)))
-    
+    # WARNING changed here
     def sigmoid(x):
+        if x > 22:
+            return 0.999999
+        elif x < -22:
+            return 1e-10
         return 1 / (1 + (np.e ** (-x)))
 
     def leakyReLU(x):
-        return max(0.01 * x, x)
+        return max(0.01 * x, 0.5 * x)
 
     # Holds all activations for the whole network:
     # [[activation values of layer 1], [activation values of layer 2], ..., [activation values of layer x]]
@@ -109,7 +104,7 @@ def forwardProp(weights, biases, networkInputs, layerActivationFuncs):
     return activations, weightedSums
 
 
-def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alpha, func="c", iters=10):
+def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alpha, lambd, func="c", iters=10):
     """
     h - forwardProp function\n
     weights - weight set\n
@@ -135,6 +130,12 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
 
     def crossEntropyCost(networkOutput):
         """Returns cross entropy cost of network"""
+
+        def squaredSumWeights():
+            return sum([[[weights[i][j][k]**2 for k in range(len(weights[i][j]))]
+                         for j in range(len(weights[i]))]
+                        for i in range(len(weights))])
+
         result = 0
         # for every training example
         for trainingExample in range(len(trainingExamples)):
@@ -143,7 +144,8 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
                 result += (trainingExamples[trainingExample][1][output]
                            * np.log(networkOutput[output])
                            + (1 - trainingExamples[trainingExample][1][output])
-                           * np.log(1 - networkOutput[output]))
+                           * np.log(1 - networkOutput[output])
+                           + (lambd/(2*len(trainingExamples)))*squaredSumWeights())        # WARNING
 
         result = result * (-1 / len(trainingExamples))
         return result
@@ -162,33 +164,26 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
 
         deltas = []
 
-        # Overflow prevention
-        # def dCrossEntropy(y, yHat):
-        #     maxVal = 100000
-        #     if y == yHat:
-        #         return 0
-        #     elif y == 0 and yHat == 1:
-        #         return maxVal
-        #     elif y == 1 and yHat == 0:
-        #         return -maxVal
-        #     else:
-        #         return -(y - yHat) / (yHat - (yHat ** 2))
-
         def dCrossEntropy(y, yHat):
-            return -(y - yHat) / (yHat - (yHat ** 2))
+            maxVal = 100000
+            if y == yHat:
+                return 0
+            elif y == 0 and yHat == 1:
+                return maxVal
+            elif y == 1 and yHat == 0:
+                return -maxVal
+            else:
+                return -(y - yHat) / (yHat - (yHat ** 2))
+        # def dCrossEntropy(y, yHat):
+        #     return -(y - yHat) / (yHat - (yHat ** 2))
 
-        # Alternative that prevents overflow
-        # Exponent function overflows when x is approx. 23
-        # def dSig(x):
-        #     if abs(x) > 22:
-        #       return 1e-10
-        #   return (np.e ** x) / ((np.e ** x) + 1) ** 2
-        
         def dSig(x):
+            if abs(x) > 22:
+                return 1e-10
             return (np.e ** x) / ((np.e ** x) + 1) ** 2
 
         def dLeakyReLU(x):
-            return 1 if x >= 0 else 0.01
+            return 0.5 if x >= 0 else 0.01
 
         if func == "c":
             if layerActivationFuncs[-1] == "sigmoid":
@@ -231,7 +226,9 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
                         for neuron in range(len(weights[weightSet][nextNeuron])):
                             weights[weightSet][nextNeuron][neuron] -= (alpha
                                                                        * deltas[weightSet][nextNeuron]
-                                                                       * activations[weightSet][neuron])
+                                                                       * activations[weightSet][neuron]
+                                                                       + ((lambd/len(trainingExamples))
+                                                                          * weights[weightSet][nextNeuron][neuron]))
 
                     biases[weightSet] -= alpha * np.sum(deltas[weightSet])
 
