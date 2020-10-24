@@ -1,8 +1,6 @@
 # NeuralNetwork
 Implementation of a neural network in python.
 
-Network training functions are complete but have not been tested yet with large networks.
-
 Dependencies - Numpy, tqdm 
 
 Found something useful here? Consider donating :)
