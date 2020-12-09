@@ -233,5 +233,4 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
                     biases[weightSet] -= alpha * np.sum(deltas[weightSet])
 
         return weights, biases
-
-    return gradientDescent()
+    
