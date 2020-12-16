@@ -13,13 +13,23 @@ set nobackup
 set undodir=~/.vim/undodir
 set undofile
 set incsearch
+set backspace=indent,eol,start
+set colorcolumn=172
+highlight ColorColumn ctermbg=0 guibg=lightgrey
 
 inoremap jj <Esc>
 
-set backspace=indent,eol,start
+function! CompileRun()
+    if expand('%:e') ==? "py"
+        return ":!python3.8 " . expand("%:t")
+    elseif expand('%:e') ==? "cpp"
+        return ":!g++ -std=c++17 " . expand("%:t") . " -o " . expand("%:t:r") . " && ./" . expand("%:t:r")
+    else
+        return ""
+    endif
+endfunction 
 
-set colorcolumn=172
-highlight ColorColumn ctermbg=0 guibg=lightgrey
+nnoremap <expr> mm CompileRun()
 
 call plug#begin('~/.vim/plugged')
 
@@ -32,4 +42,3 @@ call plug#end()
 set bg=dark
 let g:gruvbox_contrast_dark='hard'
 colo gruvbox
-
