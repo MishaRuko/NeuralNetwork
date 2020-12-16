@@ -48,6 +48,35 @@ def generateParameters(netStructure):
     return weights, biases
 
 
+def convolve(image, filt):
+    """
+    Takes 2D array for image
+    Image can be any dimension as long as it is bigger than the filter
+    Takes square 2D array for filter 
+    Returns convolved image
+    """
+    if type(image) != np.ndarray:
+        image = np.array(image)
+    
+    if type(filt) != np.ndarray:
+        filt = np.array(filt)
+
+    convolvedImage = np.empty((0, len(image[0])-len(filt)+1))
+
+# Are the names row and column right? Too lazy to check, it works
+    for row in range(len(image) - len(filt) + 1):
+        imgRow = np.array([])
+        for column in range(len(image[row]) - len(filt) + 1):
+
+            section = image[row:row+len(filt), column:column+len(filt)]
+
+            imgRow = np.append(imgRow, np.sum((section*filt).astype(int)))
+
+        convolvedImage = np.append(convolvedImage, np.reshape(imgRow, (1, len(image[0])-len(filt)+1)), axis=0)
+
+    return convolvedImage
+
+
 def forwardProp(weights, biases, networkInputs, layerActivationFuncs):
     """
     layerActivationFuncs - array containing the type of activation function to be used by each layer\n
@@ -67,7 +96,6 @@ def forwardProp(weights, biases, networkInputs, layerActivationFuncs):
             len(layerActivationFuncs), len(weights)))
 
     # Activation functions
-    # WARNING changed here
     def sigmoid(x):
         if x > 22:
             return 0.999999
@@ -145,7 +173,7 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
                            * np.log(networkOutput[output])
                            + (1 - trainingExamples[trainingExample][1][output])
                            * np.log(1 - networkOutput[output])
-                           + (lambd/(2*len(trainingExamples)))*squaredSumWeights())        # WARNING
+                           + (lambd/(2*len(trainingExamples)))*squaredSumWeights())
 
         result = result * (-1 / len(trainingExamples))
         return result
@@ -233,4 +261,5 @@ def trainNetwork(h, weights, biases, layerActivationFuncs, trainingExamples, alp
                     biases[weightSet] -= alpha * np.sum(deltas[weightSet])
 
         return weights, biases
-    
+
+    return gradientDescent()
